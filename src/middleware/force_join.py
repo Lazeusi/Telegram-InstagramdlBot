@@ -43,7 +43,7 @@ class ForceJoinMiddleware(BaseMiddleware):
 
                 if not_joined:
                     keyboard = await list_channels_join_keyboard(not_joined)
-                    text = "🚫 Please join all required channels to continue using the bot."
+                    text = "🚫 لطفا برای استفاده از ربات عضو تمام چنل ها بشید"
 
                     # ❌ ذخیره هندلر اصلی برای بعد از عضویت
                     pending_users[user_id] = (handler, event, data)

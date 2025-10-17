@@ -25,14 +25,14 @@ async def check_join_handler(call: types.CallbackQuery, bot):
     if not_joined:
         keyboard = await list_channels_join_keyboard(not_joined)
         await call.message.edit_text(
-            "🚫 You still haven’t joined all required channels.",
+            "🚫 شما هنوز عضو تمام کانال ها نشدید",
             reply_markup=keyboard
         )
         await call.answer()
         return
 
     # ✅ کاربر حالا عضو شده
-    await call.message.edit_text("✅ Thank you! You’re now verified and can use the bot.")
+    await call.message.edit_text("✅ شما با موفقیت عضو شدید")
     await call.answer()
 
     # 🧠 ادامه هندلر اصلی (Resume)

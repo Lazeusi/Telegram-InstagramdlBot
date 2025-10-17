@@ -25,7 +25,7 @@ log = get_logger()
 async def channel_list_handler(call: types.CallbackQuery):
     try:
         await call.message.edit_text(
-            " ------------ Force join panel ------------ \n",
+            "پنل جوین اجباری:\n\n",
             reply_markup=await channel_keyboard()
         )
         await call.answer()
@@ -45,9 +45,9 @@ class ForceJoinState(StatesGroup):
 async def ask_for_chat(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.message.edit_text(
-            "📢 Please send one of the following:\n"
-            "1️⃣ The @username of the public channel or group\n"
-            "2️⃣ Or a forwarded message from a private chat",
+            "📢 لطفا طبق یکی از مراحل پیش برید.\n"
+            "1️⃣ برای گروه یا کانال های عمومی فقط @username را وارد کنید\n"
+            "2️⃣ برای کانال های خصوصی یک پیام از آن کانال را فوروارد کنید\n\n",
             reply_markup=await back_to_force_join_panel_keyboard()
         )
         await state.update_data(prompt_message_id=call.message.message_id)
@@ -84,7 +84,7 @@ async def get_chat_id(message: types.Message, state: FSMContext):
 
         else:
             await message.answer(
-                "⚠️ Please send a valid @username or a forwarded message from a chat.",
+                "⚠️ لطفا یک گروه یا کانال عمومی را وارد کنید یا پیامی از آن کانال را فوروارد کنید.",
                 reply_markup=await back_to_force_join_panel_keyboard()
             )
             return
@@ -96,7 +96,7 @@ async def get_chat_id(message: types.Message, state: FSMContext):
         await message.answer(
             f"📛 Title: {title}\n"
             f"🆔 Chat ID: <code>{chat_id}</code>\n\n"
-            f"Do you want to add this chat to Force Join list?",
+            f"آیا مطمئن هستید که میخواهید این کانال را به لیست جوین اجباری اضافه کنید؟",
             parse_mode="HTML",
             reply_markup= await confirm_add_force_channel_keyboard()
         )
@@ -110,7 +110,7 @@ async def get_chat_id(message: types.Message, state: FSMContext):
         )
     except Exception as e:
         await message.answer(
-            f"⚠️ An unexpected error occurred: {e}",
+            f"⚠️ خطایی به وجود آمده: {e}",
             reply_markup=await back_to_admin_panel_keyboard()
         )
 
@@ -128,7 +128,7 @@ async def confirm_chat(call: types.CallbackQuery, state: FSMContext):
 
 
     await call.message.edit_text(
-        f"✅ Chat successfully added to Force Join list!\n\n"
+        f"✅ کانال با موفقیت به لیست جوین اجباری اضافه شد\n\n"
         f"📛 Title: {title}\n"
         f"🆔 Chat ID: <code>{chat_id}</code>",
         parse_mode="HTML",
@@ -143,7 +143,7 @@ async def confirm_chat(call: types.CallbackQuery, state: FSMContext):
 async def remove_channel(call: types.CallbackQuery):
     try:
         await call.message.edit_text(
-            "Please select the channel you want to remove:",
+            "لطفا کانالی که میخواهید حذف کنید را انتخاب کنید",
             reply_markup=await ch_remove_keyboard()
         )
     except Exception as e:
@@ -157,10 +157,10 @@ async def input_channel(call: types.CallbackQuery , state: FSMContext):
         info = await Channel.get_channel(chat_id)
         await state.update_data(chat_id=chat_id , info=info)
         await call.message.edit_text(
-            f"You are deleting the following channel:\n\n"
+            f"شما در حال حذف کانال زیر هستید\n\n"
             f"📛 Title: {info['title']}\n"
             f"🆔 Chat ID: <code>{info['channel_id']}</code>\n\n"
-            f"Are you sure you want to delete this channel?",
+            f"آیا مطمئن هستید که میخواهید این کانال را حذف کنید؟",
             parse_mode="HTML" ,          
             reply_markup=await accept_remove_channel_keyboard()
         )
@@ -177,7 +177,7 @@ async def remove_channel(call: types.CallbackQuery, state: FSMContext):
         info = data.get("info")
         await Channel.remove_channel(chat_id)
         await call.message.edit_text(
-            f"Channel {info['title']} removed successfully\n" ,
+            f"کانال {info['title']} با موفقیت حذف شد\n" ,
             reply_markup=await back_to_admin_panel_keyboard()
         )
         log.info(f"Channel {info['title']} was removed")
@@ -190,7 +190,7 @@ async def remove_channel(call: types.CallbackQuery, state: FSMContext):
 async def channel_list(call: types.CallbackQuery):
     try:
         await call.message.edit_text(
-            "Channels list:",
+            "لیست کانال ها:",
             reply_markup=await list_channels_keyboard()
         )
         await call.answer()
@@ -203,7 +203,7 @@ async def info_channel(call: types.CallbackQuery):
         chat_id = int(call.data.split("_")[2])
         info = await Channel.get_channel(chat_id)
         await call.message.edit_text(
-            f"Channel/group information \n\n"
+            f"📢 اطلاعات کانال/گروه \n\n"
             f"📛 Title: {info['title']}\n"
             f"🆔 Chat ID: <code>{info['channel_id']}</code>\n"
             f"🕝 Aded at: {info['added_at']}",

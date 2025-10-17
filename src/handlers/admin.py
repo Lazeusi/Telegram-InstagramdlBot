@@ -18,13 +18,25 @@ bot = Bot(token=settings.BOT_TOKEN)
 log = get_logger()
 router = Router()
 
+
+@router.message(Command("activate"))
+async def active_admin(msg: types.Message):
+    try:
+        exist = await Admin.get_all()
+        if not exist:
+            await Admin.add_admin(user_id=msg.from_user.id , username=msg.from_user.username)
+            await msg.answer(f"شما به ربات دسترسی داده شدید")
+        else:
+            return
+    except Exception as e:
+        log.error(f"We got an error: {e}")
 @router.message(Command("panel"))
 async def admin_handler(msg: types.Message):
     try:
         if not await Admin.is_admin(user_id=msg.from_user.id):
-            await msg.reply("You are not an admin.")
+            await msg.reply("شما ادمین نیستید")
             return
-        await msg.answer(f"Welcome to admin panel {msg.from_user.first_name}\n\n--------------Admin panel--------------",
+        await msg.answer(f"\n\n--------------پنل ادمین--------------\n\n",
                          reply_markup=await admin_keyboard()
                          )
     except Exception as e:
@@ -33,7 +45,7 @@ async def admin_handler(msg: types.Message):
 @router.callback_query(F.data == "close")
 async def close_handler(call: types.CallbackQuery):
     try:      
-        await call.message.edit_text(f"Admin panel closed by {call.from_user.first_name}")
+        await call.message.edit_text(f"پنل ادمین بسته شد")
         await call.answer()
     except Exception as e:
         log.error(f"We got an error: {e}")
@@ -46,7 +58,7 @@ class AdminStates(StatesGroup):
 async def add_admin_handler(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.message.edit_text(
-            "Please enter the username or user ID of the admin you want to add:",
+            "لطفا نام کاربری یا شناسه کاربر را وارد کنید:\n\n",
             reply_markup=await cancel_keyboard()
         )
         await call.answer()
@@ -60,7 +72,7 @@ async def add_admin_handler(call: types.CallbackQuery, state: FSMContext):
 async def cancel_handler(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.message.edit_text(
-            "Process canceled\n\n--------------Admin panel--------------",
+            "شما برگشتید\n\n--------------پنل ادمین--------------\n\n",
             reply_markup=await admin_keyboard()
         )
         await call.answer()
@@ -82,7 +94,7 @@ async def process_admin_input(msg: types.Message, state: FSMContext):
             user = await User.get_user(username=text.lower())
 
         if not user:
-            await msg.answer("❌ No user found with that username or ID.")
+            await msg.answer("❌ کاربری با این شناسه یا نام کاربری یافت نشد." , reply_markup= await back_to_admin_panel_keyboard())
             return
 
         success = await Admin.add_admin(
@@ -94,14 +106,14 @@ async def process_admin_input(msg: types.Message, state: FSMContext):
         if success:
             uname = f"@{user.get('username')}" if user.get("username") else "No Username"
             await msg.answer(
-                f"✅ Admin added successfully\n"
+                f"✅ ادمین با موفقیت اضافه شد\n"
                 f"👤 Username: {uname}\n"
                 f"🆔 User ID: {user['user_id']}\n"
                 f"🕒 Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-            await bot.send_message(user["user_id"], f"You have been promoted to admin by {msg.from_user.first_name}.")
+            await bot.send_message(user["user_id"], f" شما به ربات دسترسی داده شدید توسط {msg.from_user.first_name}.")
         else:
-            await msg.answer("⚠️ User is already an admin or an error occurred." , reply_markup= await back_to_admin_panel_keyboard())
+            await msg.answer("⚠️ کاربر از قبل ادمین بوده" , reply_markup= await back_to_admin_panel_keyboard())
 
         await state.clear()
     except Exception as e:
@@ -112,7 +124,7 @@ async def process_admin_input(msg: types.Message, state: FSMContext):
 async def remove_admin_handler(call: types.CallbackQuery):
     try:
         await call.message.edit_text(
-            "Please select the admin you want to remove:",
+            "لطفا ادمینی که میخواهید حذف کنید را انتخاب کنید:\n\n",
             reply_markup=await remove_admin_keyboard()
         )
         await call.answer()
@@ -123,7 +135,7 @@ async def remove_admin_handler(call: types.CallbackQuery):
 async def cancel_remove_admin_handler(call: types.CallbackQuery):
     try:
         await call.message.edit_text(
-            "Process canceled\n\n--------------Admin panel--------------",
+            "شما برگشتید\n\n--------------پنل ادمین--------------\n\n",
             reply_markup=await admin_keyboard()
         )
         await call.answer()
@@ -135,7 +147,7 @@ async def remove_admin(call: types.CallbackQuery, state: FSMContext):
     try:
         admin_id = int(call.data.split("_")[2])
         await call.message.edit_text(
-            f"Are you sure you want to remove admin with ID {admin_id} ?",
+            f"آیا مطمئن هستید که میخواهید ادمین با شناسه {admin_id} را حذف کنید؟\n\n",
             reply_markup=await accept_remove_admin_keyboard(admin_id)
         )
         await call.answer()
@@ -148,7 +160,7 @@ async def accept_remove_admin(call: types.CallbackQuery, state: FSMContext):
         admin_id = int(call.data.split("_")[3])
         await Admin.remove_admin(admin_id)
         await call.message.edit_text(
-            f"Admin with ID {admin_id} removed successfully",
+            f"ادمین با شناسه {admin_id} با موفقیت حذف شد",
             log.info(f"Admin with ID {admin_id} removed successfully by {call.from_user.first_name}"),
             reply_markup=await admin_keyboard()
         )
@@ -160,7 +172,7 @@ async def accept_remove_admin(call: types.CallbackQuery, state: FSMContext):
 async def remove_admin_handler(call: types.CallbackQuery):
     try:
         await call.message.edit_text(
-            "Admins list:",
+            "لیست ادمین ها:\n\n",
             reply_markup=await list_admin_keyboard()
         )
         await call.answer()
@@ -202,7 +214,7 @@ class FindUserState(StatesGroup):
 async def find_user_handler(call: types.CallbackQuery, state: FSMContext):
     try:
         await call.message.edit_text(
-            "Please enter the username or user ID of the user you want to find:",
+            "لطفا نام کاربری یا شناسه کاربر را وارد کنید:\n\n",
             reply_markup=await cancel_keyboard()
         )
         await call.answer()
@@ -233,7 +245,7 @@ async def find_user(message: types.Message, state: FSMContext):
                 reply_markup= await back_to_admin_panel_keyboard()
             )
         else:
-            await message.answer("User not found." ,
+            await message.answer("❌ کاربری با این شناسه یا نام کاربری یافت نشد." ,
                                  reply_markup= await back_to_admin_panel_keyboard())
     except Exception as e:
         log.error(f"We got an error: {e}")
